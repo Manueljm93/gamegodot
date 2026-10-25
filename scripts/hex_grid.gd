@@ -7,6 +7,7 @@ extends Node3D
 @export var hex_height := 0.3
 
 var cells := {}  # Dictionary[Vector2i, HexCell]
+var arena_mode := false
 
 const TERRAIN_TYPES := {
 	"grass": Color(0.35, 0.65, 0.3),
@@ -65,6 +66,20 @@ func get_cell_world_pos(coord: Vector2i) -> Vector3:
 	var pos := axial_to_world(coord)
 	pos.y = hex_height / 2.0
 	return pos
+
+
+func get_walkable_coords(exclude_center: bool = false, min_dist: int = 0) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for key in cells.keys():
+		var coord: Vector2i = key
+		if not is_walkable(coord):
+			continue
+		if exclude_center and coord == Vector2i.ZERO:
+			continue
+		if min_dist > 0 and _axial_distance(coord, Vector2i.ZERO) < min_dist:
+			continue
+		result.append(coord)
+	return result
 
 
 func is_walkable(coord: Vector2i) -> bool:
@@ -198,6 +213,8 @@ func _create_hex_mesh() -> ArrayMesh:
 
 
 func _pick_terrain(coord: Vector2i) -> String:
+	if arena_mode:
+		return "path"
 	var dist := _axial_distance(coord, Vector2i.ZERO)
 	var noise_val := sin(coord.x * 0.7 + coord.y * 1.3) * 0.5 + 0.5
 

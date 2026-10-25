@@ -33,5 +33,20 @@
 - **Razon**: Para inicio incremental, Scene Tree es suficiente. ECS solo si necesitamos manejar miles de entidades. No abstraccion prematura.
 - **Estado**: Vigente
 
+## DEC-005: Combate turn-based → In-place overlay (no escena separada)
+
+- **Fecha**: 2026-10-25
+- **Decision**: Combate ocurre en el mismo mapa (hex grid) con UI overlay, no en escena separada.
+- **Razon**: Mas simple para M5 incremental. Enemigos visibles en el overworld como Barbarian.glb. Al pisar su hex, se activa combate con HP bars y turnos. Victoria remueve enemigo, derrota reinicia escena.
+- **Alternativa**: Escena de combate separada (estilo Octopath). Evaluar para M7+ cuando haya party y habilidades multiples.
+- **Estado**: Implementada
+
+## DEC-006: Ability routing → Signal desde UI, main.gd decide destino
+
+- **Fecha**: 2026-10-25
+- **Decision**: ability_ui emite signal `ability_used`, main.gd rutea a combate o animacion libre segun estado.
+- **Razon**: Desacopla UI de logica de combate. Permite reusar mismos botones en exploracion y combate.
+- **Estado**: Implementada
+
 ---
-*Ultima actualizacion: 2026-10-24*
+*Ultima actualizacion: 2026-10-25*

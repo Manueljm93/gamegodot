@@ -1,5 +1,6 @@
 extends Control
-## UI panel with ability buttons that trigger character animations.
+
+signal ability_used(anim_name: String)
 
 @export var character_path: NodePath
 
@@ -65,5 +66,4 @@ func _build_buttons() -> void:
 
 
 func _on_ability_pressed(anim_name: String) -> void:
-	if character and character.has_method("play_animation"):
-		character.play_animation(anim_name)
+	ability_used.emit(anim_name)

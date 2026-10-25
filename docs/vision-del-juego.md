@@ -40,30 +40,33 @@ Fusion de **Octopath Traveler** (combate turn-based, party, clases) con **For Th
 
 ## Assets Actuales
 
+### KayKit Adventurers (CC0)
+- Knight, Barbarian, Mage, Ranger, Rogue, Rogue_Hooded (GLB)
+- Animaciones: General (Idle, Hit, Death, Throw, Interact, Use_Item, Spawn, PickUp) + Movement (Walking, Running, Jump)
+- Items: 31 armas/objetos (swords, axes, bows, shields, staves)
+
 ### Personajes (Quaternius - CC0)
-- Warrior, Wizard, Ranger, Rogue, Monk, Cleric
+- Warrior, Wizard, Ranger, Rogue, Monk, Cleric (FBX)
 
 ### Monstruos (Quaternius - CC0)
-- Bat, Dragon, Skeleton, Slime
+- Bat, Dragon, Skeleton, Slime (FBX)
 
 ### Pendiente
-- [ ] KayKit Adventurers (descargar manual desde itch.io)
-- [ ] Tiles de terreno hexagonal
 - [ ] Props de entorno (arboles, rocas, edificios)
-- [ ] UI/HUD elements
+- [ ] UI/HUD polish
 - [ ] Audio placeholder
 
 ## Roadmap Tentativo (Features Incrementales)
 
-1. **Milestone 1**: Personaje visible en pantalla 3D con camara isometrica
-2. **Milestone 2**: Movimiento basico del personaje
-3. **Milestone 3**: Hex grid visible como overworld
-4. **Milestone 4**: Movimiento en hex grid
-5. **Milestone 5**: Encuentro de combate basico (turn-based)
+1. ~~**Milestone 1**: Knight visible en 3D isometrica~~ ✓
+2. ~~**Milestone 2**: Sistema de habilidades con animaciones~~ ✓
+3. ~~**Milestone 3**: Hex grid overworld con terrenos~~ ✓
+4. ~~**Milestone 4**: Click-to-move con BFS pathfinding~~ ✓
+5. **Milestone 5**: Combate turn-based basico (HP, turnos, victoria/derrota)
 6. **Milestone 6**: Party de multiples personajes
-7. **Milestone 7**: Clases y habilidades
+7. **Milestone 7**: Clases y habilidades diferenciadas
 8. **Milestone 8**: Enemigos con AI basica
 9. *...se define a medida que avanzamos*
 
 ---
-*Ultima actualizacion: 2026-10-24*
+*Ultima actualizacion: 2026-10-25*

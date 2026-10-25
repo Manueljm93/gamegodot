@@ -15,8 +15,15 @@ D:\GameOne\
 │   └── main.tscn           # Escena principal 3D - entry point
 │
 ├── scripts/                # Scripts GDScript (.gd)
-│   ├── main.gd             # Script de main scene
-│   └── game_manager.gd     # Singleton autoload - estado global
+│   ├── main.gd             # Controlador principal - scene setup, input, estados
+│   ├── game_manager.gd     # Singleton autoload - estado global
+│   ├── hex_grid.gd         # Generador de hex grid, pathfinding BFS
+│   ├── character.gd        # Controller de personaje, animaciones
+│   ├── animation_loader.gd # Carga animaciones de GLB externos
+│   ├── ability_ui.gd       # HUD de habilidades (botones)
+│   ├── combat_manager.gd   # Logica de combate turn-based
+│   ├── combat_ui.gd        # HUD de combate (HP bars, turnos)
+│   └── validate.gd         # Script headless para validacion GDScript
 │
 ├── assets/
 │   ├── models/
@@ -86,4 +93,4 @@ D:\GameOne\
 5. **Licencias junto a assets**: LICENSE_*.txt en carpeta de models.
 
 ---
-*Ultima actualizacion: 2026-10-24*
+*Ultima actualizacion: 2026-10-25*
