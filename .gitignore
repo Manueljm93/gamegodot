@@ -2,6 +2,7 @@
 .godot/
 *.tmp
 *.log
+*.import
 
 # OS
 Thumbs.db
