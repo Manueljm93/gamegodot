@@ -9,9 +9,15 @@ var camera_distance := 14.0
 var camera_angle := 40.0
 var camera_rotation := 45.0
 
+var knight_coord := Vector2i.ZERO
+var move_path: Array[Vector2i] = []
+var move_index: int = 0
+var is_moving: bool = false
+var move_speed := 4.0
+
 
 func _ready() -> void:
-	print("GameOne started - Milestone 3: Hex Grid")
+	print("GameOne started - Milestone 4: Hex Movement")
 	_setup_character()
 	_place_knight_on_grid()
 	_update_camera()
@@ -32,8 +38,8 @@ func _setup_character() -> void:
 
 
 func _place_knight_on_grid() -> void:
-	var center := Vector2i.ZERO
-	var pos: Vector3 = hex_grid.get_cell_world_pos(center)
+	knight_coord = Vector2i.ZERO
+	var pos: Vector3 = hex_grid.get_cell_world_pos(knight_coord)
 	knight.position = pos
 
 
@@ -50,5 +56,67 @@ func _update_camera() -> void:
 	camera.look_at(target, Vector3.UP)
 
 
-func _process(_delta: float) -> void:
-	pass
+func _unhandled_input(event: InputEvent) -> void:
+	if is_moving:
+		return
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			_handle_click(mb.position)
+
+
+func _handle_click(screen_pos: Vector2) -> void:
+	var origin := camera.project_ray_origin(screen_pos)
+	var dir := camera.project_ray_normal(screen_pos)
+	var end := origin + dir * 100.0
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(origin, end)
+	var result := space.intersect_ray(query)
+	if result.is_empty():
+		return
+	var collider: Node3D = result["collider"]
+	if not collider.has_meta("coord"):
+		return
+	var target: Vector2i = collider.get_meta("coord")
+	if target == knight_coord:
+		return
+	var path: Array[Vector2i] = hex_grid.find_path(knight_coord, target)
+	if path.is_empty():
+		return
+	move_path = path
+	move_index = 0
+	is_moving = true
+	knight.play_animation("Walking", true)
+
+
+func _process(delta: float) -> void:
+	if is_moving:
+		_process_movement(delta)
+	_update_camera()
+
+
+func _process_movement(delta: float) -> void:
+	var target_pos: Vector3 = hex_grid.get_cell_world_pos(move_path[move_index])
+	var diff := target_pos - knight.position
+	diff.y = 0.0
+	var dist := diff.length()
+	if dist < 0.05:
+		knight.position = target_pos
+		move_index += 1
+		if move_index >= move_path.size():
+			is_moving = false
+			knight_coord = move_path[move_path.size() - 1]
+			knight.play_animation("Idle_A")
+			move_path = []
+			return
+	else:
+		var step_dist := move_speed * delta
+		if step_dist > dist:
+			knight.position = target_pos
+		else:
+			knight.position += diff.normalized() * step_dist
+		if diff.length() > 0.01:
+			var look_target := knight.position + diff
+			look_target.y = knight.position.y
+			knight.look_at(look_target, Vector3.UP)
+			knight.rotate_y(PI)

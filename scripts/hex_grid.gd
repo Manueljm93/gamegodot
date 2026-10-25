@@ -67,6 +67,42 @@ func get_cell_world_pos(coord: Vector2i) -> Vector3:
 	return pos
 
 
+func is_walkable(coord: Vector2i) -> bool:
+	if not cells.has(coord):
+		return false
+	var cell: Node3D = cells[coord]
+	var terrain: String = cell.get_meta("terrain")
+	return terrain != "water" and terrain != "mountain"
+
+
+func find_path(from: Vector2i, to: Vector2i) -> Array[Vector2i]:
+	if not cells.has(from) or not cells.has(to):
+		return []
+	if not is_walkable(to):
+		return []
+	var frontier: Array[Vector2i] = [from]
+	var came_from := {}
+	came_from[from] = from
+	while frontier.size() > 0:
+		var current: Vector2i = frontier[0]
+		frontier.remove_at(0)
+		if current == to:
+			break
+		for neighbor: Vector2i in get_neighbors(current):
+			if not came_from.has(neighbor) and is_walkable(neighbor):
+				frontier.append(neighbor)
+				came_from[neighbor] = current
+	if not came_from.has(to):
+		return []
+	var path: Array[Vector2i] = []
+	var trace: Vector2i = to
+	while trace != from:
+		path.append(trace)
+		trace = came_from[trace]
+	path.reverse()
+	return path
+
+
 func _create_hex_cell(coord: Vector2i, terrain: String) -> Node3D:
 	var cell := Node3D.new()
 	cell.name = "Hex_%d_%d" % [coord.x, coord.y]
@@ -80,6 +116,17 @@ func _create_hex_cell(coord: Vector2i, terrain: String) -> Node3D:
 	mesh_instance.material_override = mat
 
 	cell.add_child(mesh_instance)
+
+	var body := StaticBody3D.new()
+	body.set_meta("coord", coord)
+	var col_shape := CollisionShape3D.new()
+	var shape := CylinderShape3D.new()
+	shape.radius = hex_size * 0.9
+	shape.height = hex_height
+	col_shape.shape = shape
+	body.add_child(col_shape)
+	cell.add_child(body)
+
 	cell.position = axial_to_world(coord)
 
 	cell.set_meta("coord", coord)

@@ -30,14 +30,17 @@ func initialize() -> void:
 	_print_tree_debug(self, 0)
 
 
-func play_animation(anim_name: String) -> void:
+func play_animation(anim_name: String, loop: bool = false) -> void:
 	if not anim_player:
 		return
 	var found := _find_animation(anim_name)
 	if found.is_empty():
 		print("Animation not found: ", anim_name)
 		return
-	print("Playing: ", found)
+	if loop:
+		var anim := anim_player.get_animation(found)
+		if anim:
+			anim.loop_mode = Animation.LOOP_LINEAR
 	anim_player.stop()
 	anim_player.play(found)
 
