@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://main_scene"]
+[gd_scene load_steps=5 format=3 uid="uid://main_scene"]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://assets/models/kaykit/characters/Knight.glb" id="2_knight"]
 [ext_resource type="Script" path="res://scripts/ability_ui.gd" id="3_ability_ui"]
+[ext_resource type="Script" path="res://scripts/hex_grid.gd" id="4_hex_grid"]
 
 [sub_resource type="Environment" id="Environment_001"]
 background_mode = 1
@@ -22,7 +23,7 @@ environment = SubResource("Environment_001")
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 8, 8, 8)
 projection = 1
-size = 8.0
+size = 12.0
 near = 0.1
 far = 100.0
 
@@ -38,11 +39,14 @@ light_color = Color(0.7, 0.8, 1.0, 1)
 light_energy = 0.3
 shadow_enabled = false
 
-[node name="Ground" type="CSGBox3D" parent="."]
-size = Vector3(30, 0.1, 30)
+[node name="HexGrid" type="Node3D" parent="."]
+script = ExtResource("4_hex_grid")
+grid_radius = 5
+hex_size = 1.0
+hex_height = 0.3
 
 [node name="Knight" parent="." instance=ExtResource("2_knight")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
 
 [node name="AbilityUI" type="Control" parent="."]
 layout_mode = 3
