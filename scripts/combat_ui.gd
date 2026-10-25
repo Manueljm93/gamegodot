@@ -2,58 +2,24 @@ extends Control
 
 signal encounter_choice(fight: bool)
 
-var combat_hud: Control = null
-var player_bar: ProgressBar = null
-var player_hp_label: Label = null
-var enemy_bar: ProgressBar = null
-var enemy_hp_label: Label = null
+const ArmyStackScript = preload("res://scripts/army_stack.gd")
+
+var encounter_panel: Panel = null
+var combat_panel: Panel = null
+var player_stack_labels: Array[Label] = []
+var enemy_stack_labels: Array[Label] = []
 var turn_label: Label = null
 var info_label: Label = null
-var encounter_panel: Panel = null
+var result_label: Label = null
 
 
 func _ready() -> void:
 	anchor_right = 1.0
 	anchor_bottom = 1.0
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_build_combat_hud()
 	_build_encounter_panel()
-
-
-func _build_combat_hud() -> void:
-	combat_hud = Control.new()
-	combat_hud.name = "CombatHUD"
-	combat_hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	combat_hud.visible = false
-	add_child(combat_hud)
-
-	var p_panel := _create_hp_panel("Knight", Color(0.2, 0.6, 0.3), Vector2(20, 20))
-	combat_hud.add_child(p_panel)
-	player_bar = p_panel.get_node("Bar") as ProgressBar
-	player_hp_label = p_panel.get_node("HP") as Label
-
-	var e_panel := _create_hp_panel("Enemy", Color(0.7, 0.2, 0.2), Vector2(1010, 20))
-	combat_hud.add_child(e_panel)
-	enemy_bar = e_panel.get_node("Bar") as ProgressBar
-	enemy_hp_label = e_panel.get_node("HP") as Label
-
-	turn_label = Label.new()
-	turn_label.name = "TurnLabel"
-	turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	turn_label.position = Vector2(490, 80)
-	turn_label.size = Vector2(300, 40)
-	turn_label.add_theme_font_size_override("font_size", 24)
-	turn_label.add_theme_color_override("font_color", Color.WHITE)
-	combat_hud.add_child(turn_label)
-
-	info_label = Label.new()
-	info_label.name = "InfoLabel"
-	info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	info_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	info_label.position = Vector2(390, 300)
-	info_label.size = Vector2(500, 60)
-	info_label.add_theme_font_size_override("font_size", 36)
-	combat_hud.add_child(info_label)
+	_build_combat_panel()
+	_build_result_label()
 
 
 func _build_encounter_panel() -> void:
@@ -96,6 +62,88 @@ func _build_encounter_panel() -> void:
 	add_child(encounter_panel)
 
 
+func _build_combat_panel() -> void:
+	combat_panel = Panel.new()
+	combat_panel.name = "CombatPanel"
+	combat_panel.position = Vector2(140, 510)
+	combat_panel.size = Vector2(1000, 170)
+	combat_panel.visible = false
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.08, 0.08, 0.12, 0.9)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	combat_panel.add_theme_stylebox_override("panel", style)
+
+	var p_header := Label.new()
+	p_header.text = "YOUR ARMY"
+	p_header.position = Vector2(20, 8)
+	p_header.size = Vector2(250, 25)
+	p_header.add_theme_font_size_override("font_size", 16)
+	p_header.add_theme_color_override("font_color", Color(0.5, 0.85, 0.5))
+	combat_panel.add_child(p_header)
+
+	for i in 3:
+		var lbl := Label.new()
+		lbl.position = Vector2(20, 35 + i * 24)
+		lbl.size = Vector2(300, 24)
+		lbl.add_theme_font_size_override("font_size", 15)
+		lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+		lbl.visible = false
+		combat_panel.add_child(lbl)
+		player_stack_labels.append(lbl)
+
+	var e_header := Label.new()
+	e_header.text = "ENEMY ARMY"
+	e_header.position = Vector2(720, 8)
+	e_header.size = Vector2(250, 25)
+	e_header.add_theme_font_size_override("font_size", 16)
+	e_header.add_theme_color_override("font_color", Color(0.85, 0.5, 0.5))
+	combat_panel.add_child(e_header)
+
+	for i in 3:
+		var lbl := Label.new()
+		lbl.position = Vector2(720, 35 + i * 24)
+		lbl.size = Vector2(280, 24)
+		lbl.add_theme_font_size_override("font_size", 15)
+		lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+		lbl.visible = false
+		combat_panel.add_child(lbl)
+		enemy_stack_labels.append(lbl)
+
+	turn_label = Label.new()
+	turn_label.position = Vector2(300, 20)
+	turn_label.size = Vector2(400, 30)
+	turn_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	turn_label.add_theme_font_size_override("font_size", 20)
+	turn_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.4))
+	combat_panel.add_child(turn_label)
+
+	info_label = Label.new()
+	info_label.position = Vector2(200, 120)
+	info_label.size = Vector2(600, 30)
+	info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info_label.add_theme_font_size_override("font_size", 18)
+	info_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.3))
+	combat_panel.add_child(info_label)
+
+	add_child(combat_panel)
+
+
+func _build_result_label() -> void:
+	result_label = Label.new()
+	result_label.name = "ResultLabel"
+	result_label.position = Vector2(340, 280)
+	result_label.size = Vector2(600, 80)
+	result_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	result_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	result_label.add_theme_font_size_override("font_size", 40)
+	result_label.visible = false
+	add_child(result_label)
+
+
 func _create_panel_btn(text: String, color: Color, pos: Vector2) -> Button:
 	var btn := Button.new()
 	btn.text = text
@@ -111,63 +159,12 @@ func _create_panel_btn(text: String, color: Color, pos: Vector2) -> Button:
 	var hover := normal.duplicate()
 	hover.bg_color = color.lightened(0.15)
 	btn.add_theme_stylebox_override("hover", hover)
-	var pressed := normal.duplicate()
-	pressed.bg_color = color.darkened(0.15)
-	btn.add_theme_stylebox_override("pressed", pressed)
+	var pressed_style := normal.duplicate()
+	pressed_style.bg_color = color.darkened(0.15)
+	btn.add_theme_stylebox_override("pressed", pressed_style)
 	btn.add_theme_color_override("font_color", Color.WHITE)
 	btn.add_theme_font_size_override("font_size", 20)
 	return btn
-
-
-func _create_hp_panel(title: String, color: Color, pos: Vector2) -> Control:
-	var panel := Control.new()
-	panel.name = title + "Panel"
-	panel.position = pos
-	panel.size = Vector2(250, 65)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	var name_label := Label.new()
-	name_label.name = "Name"
-	name_label.text = title
-	name_label.position = Vector2(0, 0)
-	name_label.size = Vector2(250, 25)
-	name_label.add_theme_font_size_override("font_size", 18)
-	name_label.add_theme_color_override("font_color", Color.WHITE)
-	panel.add_child(name_label)
-
-	var bar := ProgressBar.new()
-	bar.name = "Bar"
-	bar.position = Vector2(0, 25)
-	bar.size = Vector2(250, 20)
-	bar.max_value = 100
-	bar.value = 100
-	bar.show_percentage = false
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.15, 0.15, 0.15)
-	bg.corner_radius_top_left = 4
-	bg.corner_radius_top_right = 4
-	bg.corner_radius_bottom_left = 4
-	bg.corner_radius_bottom_right = 4
-	bar.add_theme_stylebox_override("background", bg)
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = color
-	fill.corner_radius_top_left = 4
-	fill.corner_radius_top_right = 4
-	fill.corner_radius_bottom_left = 4
-	fill.corner_radius_bottom_right = 4
-	bar.add_theme_stylebox_override("fill", fill)
-	panel.add_child(bar)
-
-	var hp_label := Label.new()
-	hp_label.name = "HP"
-	hp_label.position = Vector2(0, 47)
-	hp_label.size = Vector2(250, 20)
-	hp_label.add_theme_font_size_override("font_size", 14)
-	hp_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
-	hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	panel.add_child(hp_label)
-
-	return panel
 
 
 func show_encounter() -> void:
@@ -178,46 +175,74 @@ func hide_encounter() -> void:
 	encounter_panel.visible = false
 
 
-func show_combat() -> void:
-	combat_hud.visible = true
+func show_combat(p_army: Array, e_army: Array) -> void:
+	combat_panel.visible = true
 	info_label.text = ""
+	turn_label.text = ""
+	_refresh_stacks(p_army, e_army)
 
 
 func hide_combat() -> void:
-	combat_hud.visible = false
+	combat_panel.visible = false
+	result_label.visible = false
 
 
-func update_hp(who: String, current: int, max_hp: int) -> void:
-	if who == "player":
-		player_bar.max_value = max_hp
-		player_bar.value = current
-		player_hp_label.text = "%d / %d" % [current, max_hp]
+func update_turn(side: String, label: String) -> void:
+	if side == "player":
+		turn_label.text = "%s — Click enemy!" % label
 	else:
-		enemy_bar.max_value = max_hp
-		enemy_bar.value = current
-		enemy_hp_label.text = "%d / %d" % [current, max_hp]
+		turn_label.text = "%s attacks..." % label
 
 
-func update_turn(is_player_turn: bool) -> void:
-	if is_player_turn:
-		turn_label.text = ">> Your Turn <<"
+func show_attack(damage: int, kills: int, target_label: String) -> void:
+	if kills > 0:
+		info_label.text = "%d dmg > %s (%d killed)" % [damage, target_label, kills]
 	else:
-		turn_label.text = "Enemy Turn..."
+		info_label.text = "%d dmg > %s" % [damage, target_label]
 
 
-func show_action(who: String, damage: int) -> void:
-	if who == "player":
-		info_label.add_theme_color_override("font_color", Color.YELLOW)
-	else:
-		info_label.add_theme_color_override("font_color", Color.RED)
-	info_label.text = "-%d!" % damage
+func refresh_stacks(p_army: Array, e_army: Array) -> void:
+	_refresh_stacks(p_army, e_army)
 
 
 func show_result(player_won: bool) -> void:
 	if player_won:
-		info_label.add_theme_color_override("font_color", Color.GREEN)
-		info_label.text = "VICTORY!"
+		result_label.text = "VICTORY!"
+		result_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
 	else:
-		info_label.add_theme_color_override("font_color", Color.RED)
-		info_label.text = "DEFEAT!"
+		result_label.text = "DEFEAT!"
+		result_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+	result_label.visible = true
 	turn_label.text = ""
+
+
+func _refresh_stacks(p_army: Array, e_army: Array) -> void:
+	for i in player_stack_labels.size():
+		var lbl: Label = player_stack_labels[i]
+		if i < p_army.size():
+			var s: ArmyStackScript = p_army[i]
+			lbl.visible = true
+			if s.is_alive():
+				var total_hp: int = (s.count - 1) * s.max_hp + s.hp
+				lbl.text = "%dx %s  (%d HP)" % [s.count, s.unit_label, total_hp]
+				lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+			else:
+				lbl.text = "%s — dead" % s.unit_label
+				lbl.add_theme_color_override("font_color", Color(0.5, 0.4, 0.4))
+		else:
+			lbl.visible = false
+
+	for i in enemy_stack_labels.size():
+		var lbl: Label = enemy_stack_labels[i]
+		if i < e_army.size():
+			var s: ArmyStackScript = e_army[i]
+			lbl.visible = true
+			if s.is_alive():
+				var total_hp: int = (s.count - 1) * s.max_hp + s.hp
+				lbl.text = "%dx %s  (%d HP)" % [s.count, s.unit_label, total_hp]
+				lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.9))
+			else:
+				lbl.text = "%s — dead" % s.unit_label
+				lbl.add_theme_color_override("font_color", Color(0.5, 0.4, 0.4))
+		else:
+			lbl.visible = false
