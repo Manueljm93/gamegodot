@@ -48,5 +48,14 @@
 - **Razon**: Desacopla UI de logica de combate. Permite reusar mismos botones en exploracion y combate.
 - **Estado**: Implementada
 
+## DEC-007: Pivot de gameplay → Heroes of Might and Magic III style
+
+- **Fecha**: 2026-10-25
+- **Decision**: Cambiar de "party RPG" (Octopath/For The King) a "hero + army strategy" (HoMM III).
+- **Razon**: El usuario quiere base building, army management, hero que comanda tropas. Mas estrategia, menos RPG individual.
+- **Impacto**: Party system reemplazado por army stacks. Se agrega town/base, recursos, recruitment. Combate pasa de 1v1 a stacks vs stacks. Hero no pelea directo, sus stats boostean al ejercito.
+- **Que se mantiene**: Hex grid overworld, combate turn-based en hex arena, low-poly 3D, click-to-move, encounter system.
+- **Estado**: En progreso
+
 ---
 *Ultima actualizacion: 2026-10-25*

@@ -6,6 +6,9 @@ const HexGridScript = preload("res://scripts/hex_grid.gd")
 const AbilityUIScript = preload("res://scripts/ability_ui.gd")
 const CombatManagerScript = preload("res://scripts/combat_manager.gd")
 const CombatUIScript = preload("res://scripts/combat_ui.gd")
+const ResourceManagerScript = preload("res://scripts/resource_manager.gd")
+const HUDScript = preload("res://scripts/hud.gd")
+const TownUIScript = preload("res://scripts/town_ui.gd")
 
 @onready var hex_grid: HexGridScript = $HexGrid
 @onready var ability_ui: AbilityUIScript = $AbilityUI
@@ -22,20 +25,34 @@ var move_speed := 4.0
 
 var combat_manager: CombatManagerScript = null
 var combat_ui: CombatUIScript = null
+var resource_manager: ResourceManagerScript = null
+var hud: HUDScript = null
+var town_ui: TownUIScript = null
 var enemies := {}
 
 var encounter_active := false
 var in_combat_view := false
+var town_menu_open := false
 var prev_knight_coord := Vector2i.ZERO
 var saved_knight_pos := Vector3.ZERO
 var combat_enemy_coord := Vector2i.ZERO
 var arena_grid: HexGridScript = null
+var town_building_chosen := false
+
+const TOWN_COORD := Vector2i.ZERO
+const BUILDING_OFFSETS := {
+	"barracks": Vector3(0.5, 0.0, -0.4),
+	"guard_tower": Vector3(-0.5, 0.0, -0.4),
+	"gold_mine": Vector3(0.0, 0.0, 0.5),
+}
 
 
 func _ready() -> void:
-	print("GameOne started - Milestone 5: Combat Arena")
+	print("GameOne started - Milestone 6: Town & Resources")
 	_setup_character()
+	_setup_resources()
 	_setup_combat()
+	_setup_town()
 	_spawn_enemies()
 	_place_knight_on_grid()
 	ability_ui.ability_used.connect(_on_ability_used)
@@ -55,6 +72,20 @@ func _setup_character() -> void:
 	knight.add_child(loader)
 
 
+func _setup_resources() -> void:
+	resource_manager = ResourceManagerScript.new()
+	resource_manager.name = "ResourceManager"
+	add_child(resource_manager)
+	resource_manager.gold_changed.connect(_on_gold_changed)
+	resource_manager.day_changed.connect(_on_day_changed)
+
+	hud = HUDScript.new()
+	hud.name = "HUD"
+	add_child(hud)
+	hud.end_turn_pressed.connect(_on_end_turn)
+	hud.update_gold(resource_manager.gold, resource_manager.gold_income)
+
+
 func _setup_combat() -> void:
 	combat_manager = CombatManagerScript.new()
 	combat_manager.name = "CombatManager"
@@ -69,6 +100,14 @@ func _setup_combat() -> void:
 	combat_ui.name = "CombatUI"
 	add_child(combat_ui)
 	combat_ui.encounter_choice.connect(_on_encounter_choice)
+
+
+func _setup_town() -> void:
+	town_ui = TownUIScript.new()
+	town_ui.name = "TownUI"
+	add_child(town_ui)
+	town_ui.building_requested.connect(_on_building_requested)
+	town_ui.close_requested.connect(_on_town_close)
 
 
 func _spawn_enemies() -> void:
@@ -86,7 +125,7 @@ func _spawn_enemies() -> void:
 
 
 func _place_knight_on_grid() -> void:
-	knight_coord = Vector2i.ZERO
+	knight_coord = TOWN_COORD
 	var pos: Vector3 = hex_grid.get_cell_world_pos(knight_coord)
 	knight.position = pos
 
@@ -118,7 +157,7 @@ func _update_camera_arena() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if is_moving or combat_manager.in_combat or encounter_active:
+	if is_moving or combat_manager.in_combat or encounter_active or town_menu_open:
 		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
@@ -140,6 +179,8 @@ func _handle_click(screen_pos: Vector2) -> void:
 		return
 	var target: Vector2i = collider.get_meta("coord")
 	if target == knight_coord:
+		if target == TOWN_COORD:
+			_open_town_menu()
 		return
 	var path: Array[Vector2i] = hex_grid.find_path(knight_coord, target)
 	if path.is_empty():
@@ -191,6 +232,97 @@ func _process_movement(delta: float) -> void:
 			knight.rotate_y(PI)
 
 
+# --- Town ---
+
+func _open_town_menu() -> void:
+	town_menu_open = true
+	town_ui.show_menu(resource_manager.gold, town_building_chosen)
+
+
+func _on_town_close() -> void:
+	town_menu_open = false
+	town_ui.hide_menu()
+
+
+func _on_building_requested(building_name: String) -> void:
+	if town_building_chosen:
+		return
+	var cost: int = _get_building_cost(building_name)
+	if not resource_manager.spend_gold(cost):
+		return
+	town_ui.mark_built(building_name)
+	town_building_chosen = true
+	_place_building_visual(building_name)
+	town_ui.show_menu(resource_manager.gold, town_building_chosen)
+	if building_name == "gold_mine":
+		resource_manager.gold_income += 50
+
+
+func _get_building_cost(building_name: String) -> int:
+	match building_name:
+		"barracks":
+			return 200
+		"guard_tower":
+			return 150
+		"gold_mine":
+			return 300
+	return 0
+
+
+func _on_end_turn() -> void:
+	if combat_manager.in_combat or encounter_active or is_moving or town_menu_open:
+		return
+	resource_manager.end_turn()
+
+
+func _place_building_visual(building_name: String) -> void:
+	if not BUILDING_OFFSETS.has(building_name):
+		return
+	var town_pos: Vector3 = hex_grid.get_cell_world_pos(TOWN_COORD)
+	var offset: Vector3 = BUILDING_OFFSETS[building_name]
+
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.name = "Building_" + building_name
+	var mat := StandardMaterial3D.new()
+	mat.roughness = 0.7
+
+	match building_name:
+		"barracks":
+			var box := BoxMesh.new()
+			box.size = Vector3(0.4, 0.5, 0.4)
+			mesh_instance.mesh = box
+			mat.albedo_color = Color(0.7, 0.25, 0.2)
+			offset.y = town_pos.y + 0.25
+		"guard_tower":
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 0.15
+			cyl.bottom_radius = 0.2
+			cyl.height = 0.8
+			mesh_instance.mesh = cyl
+			mat.albedo_color = Color(0.3, 0.4, 0.7)
+			offset.y = town_pos.y + 0.4
+		"gold_mine":
+			var box := BoxMesh.new()
+			box.size = Vector3(0.4, 0.35, 0.4)
+			mesh_instance.mesh = box
+			mat.albedo_color = Color(0.85, 0.7, 0.2)
+			offset.y = town_pos.y + 0.18
+
+	mesh_instance.material_override = mat
+	mesh_instance.position = Vector3(town_pos.x + offset.x, offset.y, town_pos.z + offset.z)
+	add_child(mesh_instance)
+
+
+func _on_gold_changed(amount: int, income: int) -> void:
+	hud.update_gold(amount, income)
+
+
+func _on_day_changed(day: int) -> void:
+	hud.update_day(day)
+
+
+# --- Encounter & Combat ---
+
 func _check_encounter() -> void:
 	if enemies.has(knight_coord):
 		encounter_active = true
@@ -211,6 +343,7 @@ func _on_encounter_choice(fight: bool) -> void:
 func _enter_combat_view() -> void:
 	in_combat_view = true
 	saved_knight_pos = knight.position
+	hud.visible = false
 
 	hex_grid.visible = false
 	for key in enemies:
@@ -263,10 +396,11 @@ func _exit_combat_view(player_won: bool) -> void:
 	knight.position = hex_grid.get_cell_world_pos(knight_coord)
 	knight.play_animation("Idle_A")
 	in_combat_view = false
+	hud.visible = true
 
 
 func _on_ability_used(anim_name: String) -> void:
-	if encounter_active:
+	if encounter_active or town_menu_open:
 		return
 	if combat_manager.in_combat:
 		if combat_manager.is_player_turn:

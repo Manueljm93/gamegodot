@@ -16,6 +16,7 @@ const TERRAIN_TYPES := {
 	"mountain": Color(0.55, 0.5, 0.45),
 	"sand": Color(0.85, 0.78, 0.55),
 	"path": Color(0.6, 0.55, 0.4),
+	"town": Color(0.75, 0.6, 0.3),
 }
 
 
@@ -215,6 +216,8 @@ func _create_hex_mesh() -> ArrayMesh:
 func _pick_terrain(coord: Vector2i) -> String:
 	if arena_mode:
 		return "path"
+	if coord == Vector2i.ZERO:
+		return "town"
 	var dist := _axial_distance(coord, Vector2i.ZERO)
 	var noise_val := sin(coord.x * 0.7 + coord.y * 1.3) * 0.5 + 0.5
 
